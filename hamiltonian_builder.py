@@ -10,12 +10,3 @@ class Hamiltonian:
             for j in range(i+1, self.graph.E):
                 acc += delta_function(x[i], x[j])
         return acc
-
-def J(i, j, b, graph):
-    if i in graph.E and j in graph.E:
-        return 1 - delta_function(b, 0)
-    return 0
-
-def PI(i, j, b, graph):
-    acc = 0
-
