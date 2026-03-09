@@ -1,4 +1,4 @@
-from hamiltonian_builder import Hamiltonian
+import abc
 
 class Graph:
     def __init__(self, E):
@@ -12,9 +12,11 @@ class Graph:
     def __str__(self):
         return f"Graph with {len(self.E)} vertices and edges: {self.edges}"
 
-
-class ProblemInstance:
+class AbstractSolverInstance(abc.ABC):
     def __init__(self, graph, k):
         self.graph = graph
         self.k = k
-        self.hamiltonian = Hamiltonian(self.graph)
+    
+    @abc.abstractmethod
+    def generate_solution(self):
+        pass
