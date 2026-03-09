@@ -8,7 +8,7 @@ class Hamiltonian:
         acc = 0
         for i in range(self.graph.E):
             for j in range(i+1, self.graph.E):
-                acc += 1 - delta_function(x[i], x[j])
+                acc += delta_function(x[i], x[j])
         return acc
 
 def J(i, j, b, graph):
