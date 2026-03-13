@@ -1,12 +1,48 @@
 from utils import *
+from qiskit import QuantumCircuit
 
 class Hamiltonian:
     def __init__(self, graph):
         self.graph = graph
 
-    def C(self, x):
+
+    def cost(self, x):
         acc = 0
-        for i in range(self.graph.E):
-            for j in range(i+1, self.graph.E):
+        for i in range(self.graph.number_of_verticles()):
+            for j in range(i+1, self.graph.number_of_verticles()):
                 acc += delta_function(x[i], x[j])
         return acc
+
+    """
+
+    def cost_hamiltonian(self):
+        cost_hamiltonian = PauliSumOp.from_list([])
+        for (i, j) in self.graph.edges:
+            for b in range(self.graph.k):
+                for a in range(self.graph.k):
+                    cost_hamiltonian += self.__projector(i, j, a, b)
+        return cost_hamiltonian
+    
+    def __projector(self, i, j, a, b):
+        # For k=2, a and b can be 0 or 1
+        # The projector is |a, a XOR b><a, a XOR b|
+        a_xor_b = a ^ b
+
+        # Create a quantum circuit for the projector |a, a_xor_b><a, a_xor_b|
+        qc = QuantumCircuit(2)
+
+        # Prepare the state |a, a_xor_b>
+        if a == 1:
+            qc.x(0)
+        if a_xor_b == 1:
+            qc.x(1)
+
+        # Create the projector |a, a_xor_b><a, a_xor_b|
+        state = Statevector.from_instruction(qc)
+        projector = state.to_operator()
+
+        return projector
+    
+    """
+    
+    
