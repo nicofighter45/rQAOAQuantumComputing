@@ -3,7 +3,7 @@ import abc
 import networkx as nx
 import matplotlib.pyplot as plt
 
-class Graph:
+class Graph(nx.Graph):
     """A simple non oriented graph class to represent the problem instance."""
 
     def __init__(self, num_verticles: int):
