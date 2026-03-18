@@ -4,20 +4,17 @@ import networkx as nx
 from qiskit_aer import AerSimulator
 import matplotlib.pyplot as plt
 
+from instance_generator import ProblemInstance, Graph
+import instance_generator
+
 
 n = 4
 
-G = nx.erdos_renyi_graph(n=n, p=0.5)
+G = instance_generator.random_graph(n, 0.5)
 
-list = []
-for i, j in G.edges():
-    list.append(""*4, "")
+instance = ProblemInstance(G, 2)
 
-
-HC = qiskit.quantum_info.SparsePauliOp(["I"*n, "Z"*n], np.array([1/2*c, -1/2*c]))
-
-
-qaoa = qiskit.circuit.library.QAOAAnsatz(cost_operator=HC, reps=1)
+qaoa = qiskit.circuit.library.QAOAAnsatz(cost_operator=instance.hamiltonian.bicolor_cost_hamiltonian(), reps=1)
 params = [0.1] * qaoa.num_parameters
 bound_qaoa = qaoa.assign_parameters(params)
 bound_qaoa.measure_all()
@@ -36,8 +33,9 @@ def plot_counts(counts):
     plt.tight_layout()
     plt.show()
 
-plot_counts(counts)
-
 max_bitstring = max(counts, key=counts.get)
 x_best = [int(bit) for bit in max_bitstring]
 print(f"solution : {x_best}")
+
+plot_counts(counts)
+G.draw()

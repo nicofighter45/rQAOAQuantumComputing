@@ -3,6 +3,11 @@ import abc
 import networkx as nx
 import matplotlib.pyplot as plt
 
+def random_graph(n: int, p: float) -> Graph:
+    G = nx.erdos_renyi_graph(n=n, p=p)
+    G.__class__ = Graph
+    return G
+
 class Graph(nx.Graph):
     """A simple non oriented graph class to represent the problem instance."""
 
@@ -11,7 +16,7 @@ class Graph(nx.Graph):
 
     def draw(self) -> None:
             G = nx.Graph()
-            G.add_nodes_from(range(self.E))
+            G.add_nodes_from(range(len(self)))
             G.add_edges_from(self.edges)
 
             plt.figure(figsize=(3, 3))
@@ -22,7 +27,7 @@ class Graph(nx.Graph):
             nx.draw_networkx_edges(G, pos)
             nx.draw_networkx_labels(G, pos)
             
-            plt.title(f"Graph |V|={self.E}, |E|={len(self.edges)}")
+            plt.title(f"Graph |V|={len(self)}, |E|={len(self.edges)}")
             plt.axis("off")
             plt.tight_layout()
             plt.show()
