@@ -1,5 +1,6 @@
 from utils import *
 from qiskit import QuantumCircuit
+from qiskit.quantum_info import SparsePauliOp
 
 class Hamiltonian:
     def __init__(self, graph):
@@ -12,6 +13,25 @@ class Hamiltonian:
             for j in range(i+1, self.graph.number_of_verticles()):
                 acc += delta_function(x[i], x[j])
         return acc
+    
+    def bicolor_cost_hamiltonian(self) -> SparsePauliOp:
+        n = len(self.graph)  # Number of qubits
+        diagonal = [] # diagonal of the Hamiltonian matrix
+
+        for i in range(2**n):
+            bitstring = format(i, f'0{n}b')  # Convert index to binary string
+            print(i, bitstring)
+            value = 0
+            for (i, j) in self.graph.edges:
+                if bitstring[n-1-i] != bitstring[n-1-j]: # if the edges are connectd and different color
+                    value += 1
+            diagonal.append(value)
+
+        # Create a list of Pauli terms for each state
+        pauli_terms = [('I'*n, diagonal[i]) for i in range(2**n)]
+
+        # Convert the list of Pauli terms to a SparsePauliOp
+        return SparsePauliOp.from_list(pauli_terms)
 
     """
 
