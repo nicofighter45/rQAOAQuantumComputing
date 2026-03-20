@@ -11,7 +11,7 @@ from scipy.optimize import minimize
 class QAOASolver(AbstractSolverInstance):
     def __init__(self, graph, number_of_color=2, depth=1, measurement_shots=1024):
         super().__init__(graph, number_of_color)
-        self.hamiltonian = Hamiltonian(self.graph)
+        self.hamiltonian = Hamiltonian(self.graph, number_of_color)
         self.depth = depth
         self.measurement_shots = measurement_shots
 

@@ -1,9 +1,7 @@
-from src.solvers.quantum_solvers import QAOASolver, plot_counts
+from src.solvers.quantum_solvers import QAOASolver
 from src.struct.instance_generator import random_graph
+from src.struct.hamiltonian_builder import Hamiltonian
 
-G = random_graph(4, 0.5)
-solver = QAOASolver(G)
-best_coloration, counts = solver.generate_solution()
-print(best_coloration)
-plot_counts(counts)
-G.draw()
+G = random_graph(3, 0.5)
+hamiltonian = Hamiltonian(G, 3)
+print(hamiltonian.cost_hamiltonian())
