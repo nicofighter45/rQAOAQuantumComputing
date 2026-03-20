@@ -49,17 +49,6 @@ class QAOASolver(AbstractSolverInstance):
         return x_best, counts
 
 
-class quditQAOASolver(AbstractSolverInstance):
-    def __init__(self, graph, k):
-        super().__init__(graph, k)
-        self.hamiltonian = Hamiltonian(self.graph)
-    
-    def generate_solution(self):
-        # https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CXGate
-        pass
-
-
-
 """
 
 def qaoa_expectation(params):
