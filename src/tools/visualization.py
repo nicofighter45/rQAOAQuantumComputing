@@ -8,6 +8,17 @@ _test_results = {}
 def store_test_results(graph_name: str, results: dict) -> None:
     _test_results[graph_name] = results
 
+# Plot the counts as a bar chart
+def plot_counts(counts):
+    plt.figure(figsize=(8, 4))
+    plt.bar(counts.keys(), counts.values(), color='skyblue')
+    plt.xlabel('Bitstring')
+    plt.ylabel('Counts')
+    plt.title('Measurement Results')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+
 def plot_results_summary() -> None:
     """
     Creates two subplots:

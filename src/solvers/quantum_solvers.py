@@ -47,21 +47,7 @@ class QAOASolver(AbstractSolverInstance):
         counts = sim.run(transpiled, shots=self.measurement_shots).result().get_counts()
         max_bitstring = max(counts, key=counts.get)
         x_best = [int(bit) for bit in max_bitstring[::-1]]
-        print(f"Optimized solution: {x_best}")
-        plot_counts(counts)
-        self.graph.draw()
-
-# Plot the counts as a bar chart
-def plot_counts(counts):
-    plt.figure(figsize=(8, 4))
-    plt.bar(counts.keys(), counts.values(), color='skyblue')
-    plt.xlabel('Bitstring')
-    plt.ylabel('Counts')
-    plt.title('Measurement Results')
-    plt.xticks(rotation=90)
-    plt.tight_layout()
-    plt.show()
-
+        return x_best, counts
 
 
 class quditQAOASolver(AbstractSolverInstance):
