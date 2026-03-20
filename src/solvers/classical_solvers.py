@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from instance_generator import ProblemInstance
+from src.struct.instance_generator import ProblemInstance
 
 
 def brute_force_solver(problem_instance: ProblemInstance) -> tuple:

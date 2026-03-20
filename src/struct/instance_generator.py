@@ -1,4 +1,4 @@
-from hamiltonian_builder import Hamiltonian
+from src.struct.hamiltonian_builder import Hamiltonian
 import abc
 import networkx as nx
 import matplotlib.pyplot as plt
