@@ -45,10 +45,10 @@ class ProblemInstance:
         self.hamiltonian = Hamiltonian(graph)
 
 class AbstractSolverInstance(abc.ABC):
-    def __init__(self, graph, k):
+    def __init__(self, graph, number_of_color):
         self.graph = graph
-        self.k = k
-    
+        self.number_of_color = number_of_color
+
     @abc.abstractmethod
     def generate_solution(self):
         pass

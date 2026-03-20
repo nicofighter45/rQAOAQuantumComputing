@@ -10,9 +10,9 @@ class Hamiltonian:
 
     def cost(self, coloration: list[int]) -> float:
         acc = 0
-        for (i, j, data) in self.graph.edges:
+        for (i, j) in self.graph.edges:
             if coloration[i] != coloration[j]:
-                acc += data.get("weight", 1)
+                acc += self.graph[i][j].get("weight", 1)
         return acc
     
     def bicolor_cost_hamiltonian(self) -> SparsePauliOp:
@@ -22,9 +22,9 @@ class Hamiltonian:
         for i in range(2**n):
             bitstring = format(i, f'0{n}b')  # Convert index to binary string
             value = 0
-            for (i, j, data) in self.graph.edges:
+            for (i, j) in self.graph.edges:
                 if bitstring[n-1-i] != bitstring[n-1-j]: # if the edges are connectd and different color
-                    value += data.get("weight", 1)
+                    value += self.graph[i][j].get("weight", 1)
             diagonal.append(value)
 
         # Create a list of Pauli terms for each state
@@ -59,9 +59,9 @@ class Hamiltonian:
             knary = knary.zfill(n)
             binary = binary.zfill(n*m) # pad with zeros to get the full binary string
             value = 0
-            for (i, j, data) in self.graph.edges:
+            for (i, j) in self.graph.edges:
                 if knary[n-1-i] != knary[n-1-j]: # if the edges are connectd and different color
-                    value += data.get("weight", 1)
+                    value += self.graph[i][j].get("weight", 1)
             diagonal.append(value)
 
         # Create a list of Pauli terms for each state
