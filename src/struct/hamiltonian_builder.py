@@ -1,7 +1,5 @@
-from math import log, floor
+from math import log
 
-from src.tools.utils import *
-from qiskit import QuantumCircuit
 from qiskit.quantum_info import SparsePauliOp
 
 class Hamiltonian:
