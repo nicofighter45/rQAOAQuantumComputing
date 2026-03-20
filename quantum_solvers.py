@@ -1,22 +1,83 @@
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, providers
-from qiskit.circuit import ParameterVector
+import qiskit
+from qiskit.circuit.library import QAOAAnsatz
 from qiskit_aer import AerSimulator
-import numpy as np
 from hamiltonian_builder import Hamiltonian
 from instance_generator import AbstractSolverInstance
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import minimize
-from instance_generator import Graph
 
 
 class QAOASolver(AbstractSolverInstance):
+    def __init__(self, graph, number_of_color=2, depth=1, measurement_shots=1024):
+        super().__init__(graph, number_of_color)
+        self.hamiltonian = Hamiltonian(self.graph)
+        self.depth = depth
+        self.measurement_shots = measurement_shots
+
+    def generate_solution(self):
+
+        cost_operator = -self.hamiltonian.bicolor_cost_hamiltonian()
+        qaoa = QAOAAnsatz(cost_operator=cost_operator, reps=self.depth)
+        sim = AerSimulator()
+
+        def get_expectation(params):
+            bound_qaoa = qaoa.assign_parameters(params)
+            bound_qaoa.measure_all()
+            transpiled = qiskit.transpile(bound_qaoa, sim)
+            result = sim.run(transpiled, shots=self.measurement_shots).result()
+            counts = result.get_counts()
+            # Compute expectation value
+            exp = 0
+            for bitstring, count in counts.items():
+                x = [int(bit) for bit in bitstring[::-1]]
+                exp += self.hamiltonian.cost(x) * count
+            exp /= self.measurement_shots
+            return exp
+        
+        # Initial parameters
+        params_init = np.random.uniform(0, 2 * np.pi, qaoa.num_parameters)
+        res = minimize(get_expectation, params_init, method='COBYLA')
+        best_params = res.x
+
+        # Final circuit and solution
+        bound_qaoa = qaoa.assign_parameters(best_params)
+        bound_qaoa.measure_all()
+        transpiled = qiskit.transpile(bound_qaoa, sim)
+        counts = sim.run(transpiled, shots=self.measurement_shots).result().get_counts()
+        max_bitstring = max(counts, key=counts.get)
+        x_best = [int(bit) for bit in max_bitstring[::-1]]
+        print(f"Optimized solution: {x_best}")
+        plot_counts(counts)
+        self.graph.draw()
+
+# Plot the counts as a bar chart
+def plot_counts(counts):
+    plt.figure(figsize=(8, 4))
+    plt.bar(counts.keys(), counts.values(), color='skyblue')
+    plt.xlabel('Bitstring')
+    plt.ylabel('Counts')
+    plt.title('Measurement Results')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+
+
+
+class quditQAOASolver(AbstractSolverInstance):
     def __init__(self, graph, k):
         super().__init__(graph, k)
         self.hamiltonian = Hamiltonian(self.graph)
-        self.p = 1
     
     def generate_solution(self):
+        # https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CXGate
+        pass
 
-        def qaoa_expectation(params):
+
+
+"""
+
+def qaoa_expectation(params):
             qc = self.__generate_quantum_circuit_with_params(params)
             counts = AerSimulator().run(qc, shots=512).result().get_counts()
             max_bitstring = max(counts, key=counts.get)
@@ -63,26 +124,4 @@ class QAOASolver(AbstractSolverInstance):
     def __V(self, qc, qr, beta):
         for i in range(len(qr)):
             qc.rx(2 * beta, qr[i])
-
-
-class quditQAOASolver(AbstractSolverInstance):
-    def __init__(self, graph, k):
-        super().__init__(graph, k)
-        self.hamiltonian = Hamiltonian(self.graph)
-    
-    def generate_solution(self):
-        # https://quantum.cloud.ibm.com/docs/en/api/qiskit/qiskit.circuit.library.CXGate
-        pass
-
-
-
-import random
-num_nodes = 3
-num_edges = 2  # arbitrary number of edges for testing
-graph = Graph(num_nodes)
-while graph.number_of_edges() < num_edges:
-    i, j = random.sample(range(num_nodes), 2)
-    graph.add_edge(i, j)
-print(graph)
-result = QAOASolver(graph, 2).generate_solution()
-print("QAOA Result:", result)
+"""

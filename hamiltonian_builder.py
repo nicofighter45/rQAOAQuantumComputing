@@ -9,8 +9,8 @@ class Hamiltonian:
 
     def cost(self, x):
         acc = 0
-        for i in range(self.graph.number_of_verticles()):
-            for j in range(i+1, self.graph.number_of_verticles()):
+        for i in range(len(self.graph)):
+            for j in range(i+1, len(self.graph)):
                 acc += delta_function(x[i], x[j])
         return acc
     

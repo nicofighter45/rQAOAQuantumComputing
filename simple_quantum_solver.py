@@ -1,41 +1,25 @@
-import qiskit
+from qiskit.quantum_info import Pauli, PauliList, SparsePauliOp
 import numpy as np
-import networkx as nx
-from qiskit_aer import AerSimulator
-import matplotlib.pyplot as plt
-
-from instance_generator import ProblemInstance, Graph
-import instance_generator
 
 
-n = 4
+edges = [(0, 1), (0, 2)]  # Example edges
+n = 3  # Number of qubits
+diagonal = [] # diagonal of the Hamiltonian matrix
 
-G = instance_generator.random_graph(n, 0.5)
+for i in range(2**n):
+    bitstring = format(i, f'0{n}b')  # Convert index to binary string
+    print(i, bitstring)
+    value = 0
+    for (i, j) in edges:
+        if bitstring[n-1-i] != bitstring[n-1-j]: # if the edges are connectd and different color
+            value += 1
+    diagonal.append(value)
 
-instance = ProblemInstance(G, 2)
+# Create a list of Pauli terms for each state
+pauli_terms = [('I'*n, diagonal[i]) for i in range(2**n)]
 
-qaoa = qiskit.circuit.library.QAOAAnsatz(cost_operator=instance.hamiltonian.bicolor_cost_hamiltonian(), reps=1)
-params = [0.1] * qaoa.num_parameters
-bound_qaoa = qaoa.assign_parameters(params)
-bound_qaoa.measure_all()
-sim = AerSimulator()
-transpiled = qiskit.transpile(bound_qaoa, sim)
-counts = AerSimulator().run(transpiled, shots=1024).result().get_counts()
+# Convert the list of Pauli terms to a SparsePauliOp
+hamiltonian = SparsePauliOp.from_list(pauli_terms)
 
-# Plot the counts as a bar chart
-def plot_counts(counts):
-    plt.figure(figsize=(8, 4))
-    plt.bar(counts.keys(), counts.values(), color='skyblue')
-    plt.xlabel('Bitstring')
-    plt.ylabel('Counts')
-    plt.title('Measurement Results')
-    plt.xticks(rotation=90)
-    plt.tight_layout()
-    plt.show()
+print(hamiltonian)
 
-max_bitstring = max(counts, key=counts.get)
-x_best = [int(bit) for bit in max_bitstring]
-print(f"solution : {x_best}")
-
-plot_counts(counts)
-G.draw()
