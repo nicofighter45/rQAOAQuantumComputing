@@ -10,11 +10,11 @@ class Hamiltonian:
         self.number_of_color = number_of_color
 
 
-    def cost(self, x):
+    def cost(self, coloration: list[int]) -> float:
         acc = 0
-        for i in range(len(self.graph)):
-            for j in range(i+1, len(self.graph)):
-                acc += delta_function(x[i], x[j])
+        for (i, j, data) in self.graph.edges:
+            if coloration[i] != coloration[j]:
+                acc += data.get("weight", 1)
         return acc
     
     def bicolor_cost_hamiltonian(self) -> SparsePauliOp:
@@ -24,9 +24,9 @@ class Hamiltonian:
         for i in range(2**n):
             bitstring = format(i, f'0{n}b')  # Convert index to binary string
             value = 0
-            for (i, j) in self.graph.edges:
+            for (i, j, data) in self.graph.edges:
                 if bitstring[n-1-i] != bitstring[n-1-j]: # if the edges are connectd and different color
-                    value += 1
+                    value += data.get("weight", 1)
             diagonal.append(value)
 
         # Create a list of Pauli terms for each state
@@ -61,9 +61,9 @@ class Hamiltonian:
             knary = knary.zfill(n)
             binary = binary.zfill(n*m) # pad with zeros to get the full binary string
             value = 0
-            for (i, j) in self.graph.edges:
+            for (i, j, data) in self.graph.edges:
                 if knary[n-1-i] != knary[n-1-j]: # if the edges are connectd and different color
-                    value += 1
+                    value += data.get("weight", 1)
             diagonal.append(value)
 
         # Create a list of Pauli terms for each state
@@ -71,38 +71,3 @@ class Hamiltonian:
 
         # Convert the list of Pauli terms to a SparsePauliOp
         return SparsePauliOp.from_list(pauli_terms)
-            
-
-    """
-
-    def cost_hamiltonian(self):
-        cost_hamiltonian = PauliSumOp.from_list([])
-        for (i, j) in self.graph.edges:
-            for b in range(self.graph.k):
-                for a in range(self.graph.k):
-                    cost_hamiltonian += self.__projector(i, j, a, b)
-        return cost_hamiltonian
-    
-    def __projector(self, i, j, a, b):
-        # For k=2, a and b can be 0 or 1
-        # The projector is |a, a XOR b><a, a XOR b|
-        a_xor_b = a ^ b
-
-        # Create a quantum circuit for the projector |a, a_xor_b><a, a_xor_b|
-        qc = QuantumCircuit(2)
-
-        # Prepare the state |a, a_xor_b>
-        if a == 1:
-            qc.x(0)
-        if a_xor_b == 1:
-            qc.x(1)
-
-        # Create the projector |a, a_xor_b><a, a_xor_b|
-        state = Statevector.from_instruction(qc)
-        projector = state.to_operator()
-
-        return projector
-    
-    """
-    
-    

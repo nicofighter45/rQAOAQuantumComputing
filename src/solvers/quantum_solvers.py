@@ -5,7 +5,7 @@ from src.struct.hamiltonian_builder import Hamiltonian
 from src.struct.instance_generator import AbstractSolverInstance
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import maximize
 
 
 class QAOASolver(AbstractSolverInstance):
@@ -37,7 +37,7 @@ class QAOASolver(AbstractSolverInstance):
         
         # Initial parameters
         params_init = np.random.uniform(0, 2 * np.pi, qaoa.num_parameters)
-        res = minimize(get_expectation, params_init, method='COBYLA')
+        res = maximize(get_expectation, params_init, method='COBYLA')
         best_params = res.x
 
         # Final circuit and solution
