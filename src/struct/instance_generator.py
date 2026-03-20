@@ -37,28 +37,6 @@ class Graph(nx.Graph):
         return f"Graph with {len(self.verticles)} vertices and edges: {self.edges}"
 
 
-class ColoredGraph(Graph):
-    """A simple non oriented colored graph class to represent the problem instance."""
-
-    def __init__(self, number_of_color: int):
-        super().__init__()
-        self.max_color = number_of_color - 1
-        self.coloration = [0 for _ in range(len(self))]
-    
-    def set_color(self, color: int) -> None:
-        if color < 0 or color > self.max_color:
-            raise ValueError(f"Color must be between 0 and {self.max_color}.")
-        self.color = color
-    
-    def set_coloration(self, coloration: list[int]) -> None:
-        if len(coloration) != len(self):
-            raise ValueError("Coloration length must be equal to the number of vertices.")
-        if any(c >= self.max_color or c < 0 for c in coloration):
-            raise ValueError(f"Color values must be between 0 and {self.max_color}.")
-        self.coloration = coloration
-
-
-
 class ProblemInstance:
     """Instance of a graph coloring problem"""
     def __init__(self, graph, k):
