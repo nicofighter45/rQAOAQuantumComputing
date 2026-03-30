@@ -8,7 +8,7 @@ class RecursiveQAOASolver(QAOASolver):
     
     def generate_solution(self):
         
-        for _ in range(len(self.graph)/2):
+        for _ in range(int(len(self.graph)/2)):
             qaoa_solver = QAOASolver(self.graph, self.number_of_color, self.depth, self.measurement_shots)
             solution, counts = qaoa_solver.generate_solution()
 
@@ -18,9 +18,12 @@ class RecursiveQAOASolver(QAOASolver):
             for (i, j) in self.graph.edges:
                 for bitstring in counts.keys():
                     proba = counts[bitstring] / self.measurement_shots
-                    acc[i, j] += proba * (bitstring[n-1-i]*2-1) * (bitstring[n-1-j]*2-1)
+                    acc[i, j] += proba * (int(bitstring[n-1-i])*2-1) * (int(bitstring[n-1-j])*2-1)
             i, j = np.unravel_index(np.argmax(acc), acc.shape)
             
-            self.graph = self._merge_nodes(self.graph, i, j)
+            for neighbor in list(self.graph.neighbors(i)):
+                if neighbor != j:
+                    self.graph.add_edge(j, neighbor)
+            self.graph.remove_node(i)
 
         return solution, counts

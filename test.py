@@ -1,6 +1,11 @@
-from src.solvers.quantum_solvers import QAOASolver
 from src.solvers.recursive_quantum_solver import RecursiveQAOASolver
 from src.struct.instance_generator import random_graph
-from src.struct.hamiltonian_builder import Hamiltonian
+from src.tools.visualization import plot_counts
 
-RecursiveQAOASolver(random_graph(4, 0.5)).generate_solution()
+G = random_graph(4, 0.5)
+rQAOA = RecursiveQAOASolver(G)
+solution, counts = rQAOA.generate_solution()
+print(solution)
+plot_counts(counts)
+rQAOA.graph.draw()
+G.draw
