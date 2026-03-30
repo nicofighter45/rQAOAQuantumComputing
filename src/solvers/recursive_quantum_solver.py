@@ -30,8 +30,8 @@ class RecursiveQAOASolver(QAOASolver):
 
         return solution, counts
 
-    def __paint_original_graph(self):
+    def __paint_original_graph(self) -> Graph:
         self.__original_graph.colors = self.graph.colors
-        for i in range(len(self.graph)):
-            for j in self.graph.get_merged_nodes(i):
-                self.__original_graph.set_color(j, self.__original_graph.colors[i])
+        for i, j in self.graph.get_merged_nodes()[::-1]:
+            self.__original_graph.set_color(j, self.__original_graph.colors[i])
+        return self.__original_graph

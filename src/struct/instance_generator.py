@@ -70,7 +70,7 @@ class MergedGraph(Graph):
     def __init__(self, graph: Graph, merged_nodes: list[tuple[int, int]]):
         super().__init__()
         self.__removed_vertices = []
-        self.__merged_nodes = {n: [] for n in range(self.original_len())} # should be an array to reconstruct in order
+        self.__merged_nodes = []
         self.vertices = self.__vertices
     
     def __len__(self):
@@ -79,15 +79,15 @@ class MergedGraph(Graph):
     def original_len(self):
         return super().__len__()
     
-    def get_merged_nodes(self, u: int) -> list[int]:
-        return self.__merged_nodes[u]
+    def get_merged_nodes(self) -> list[tuple[int, int]]:
+        return self.__merged_nodes
 
     def merge_vertices(self, original_node: int, merged_node: int) -> None:
         for neighbor in list(self.graph.neighbors(original_node)):
                 if neighbor != merged_node:
                     self.graph.add_edge(merged_node, neighbor)
         self.graph.remove_node(merged_node)
-        self.__merged_nodes[original_node].append(merged_node)
+        self.__merged_nodes.append((original_node, merged_node))
         self.__removed_vertices.append(merged_node)
     
     @property
