@@ -1,5 +1,5 @@
-from struct.hamiltonian import Hamiltonian
-from src.struct.graph import Graph
+from hamiltonian import Hamiltonian
+from graph import Graph
 
 
 class ProblemInstance:

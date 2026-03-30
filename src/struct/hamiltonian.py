@@ -8,10 +8,10 @@ class Hamiltonian:
         self.number_of_color = number_of_color
 
 
-    def cost(self, coloration: list[int]) -> float:
+    def cost(self) -> float:
         acc = 0
         for (i, j) in self.graph.edges:
-            if coloration[i] != coloration[j]:
+            if self.graph.colors[i] != self.graph.colors[j]:
                 acc += self.graph[i][j].get("weight", 1)
         return acc
     

@@ -1,8 +1,8 @@
 import qiskit
 from qiskit.circuit.library import QAOAAnsatz
 from qiskit_aer import AerSimulator
-from struct.hamiltonian import Hamiltonian
-from struct.problem_instance import AbstractSolverInstance
+from hamiltonian import Hamiltonian
+from abstract_solver_instance import AbstractSolverInstance
 import numpy as np
 from scipy.optimize import minimize
 
@@ -30,7 +30,9 @@ class QAOASolver(AbstractSolverInstance):
             exp = 0
             for bitstring, count in counts.items():
                 x = [int(bit) for bit in bitstring[::-1]]
-                exp += self.hamiltonian.cost(x) * count
+                for u, color in enumerate(x):
+                    self.graph.set_color(u, color)
+                exp += self.hamiltonian.cost() * count
             exp /= self.measurement_shots
             return exp
         
@@ -48,7 +50,7 @@ class QAOASolver(AbstractSolverInstance):
         x_best = [int(bit) for bit in max_bitstring[::-1]]
         for u, color in enumerate(x_best):
             self.graph.set_color(u, color)
-        return x_best, counts
+        return self.graph, counts
 
 
 """

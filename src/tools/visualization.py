@@ -11,9 +11,12 @@ def store_test_results(graph_name: str, results: dict) -> None:
 # Plot the counts as a bar chart
 def plot_counts(counts):
     plt.figure(figsize=(8, 4))
-    plt.bar(counts.keys(), counts.values(), color='skyblue')
+    sorted_counts = dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
+    total = sum(sorted_counts.values())
+    normalized_counts = {k: (v / total) * 100 for k, v in sorted_counts.items()}
+    plt.bar(normalized_counts.keys(), normalized_counts.values(), color='skyblue')
     plt.xlabel('Bitstring')
-    plt.ylabel('Counts')
+    plt.ylabel('Percentage (%)')
     plt.title('Measurement Results')
     plt.xticks(rotation=90)
     plt.tight_layout()
