@@ -46,6 +46,8 @@ class QAOASolver(AbstractSolverInstance):
         counts = sim.run(transpiled, shots=self.measurement_shots).result().get_counts()
         max_bitstring = max(counts, key=counts.get)
         x_best = [int(bit) for bit in max_bitstring[::-1]]
+        for u, color in enumerate(x_best):
+            self.graph.set_color(u, color)
         return x_best, counts
 
 
