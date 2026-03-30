@@ -1,8 +1,8 @@
 import qiskit
 from qiskit.circuit.library import QAOAAnsatz
 from qiskit_aer import AerSimulator
-from src.struct.hamiltonian_builder import Hamiltonian
-from src.struct.instance_generator import AbstractSolverInstance
+from struct.hamiltonian import Hamiltonian
+from struct.problem_instance import AbstractSolverInstance
 import numpy as np
 from scipy.optimize import minimize
 

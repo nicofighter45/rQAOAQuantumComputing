@@ -1,5 +1,5 @@
 from src.solvers.quantum_solvers import QAOASolver
-from src.struct.instance_generator import AbstractSolverInstance, MergedGraph, Graph
+from struct.problem_instance import MergedGraph, Graph
 import numpy as np
 
 class RecursiveQAOASolver(QAOASolver):
