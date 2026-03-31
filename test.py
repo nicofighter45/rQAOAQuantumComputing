@@ -12,12 +12,13 @@ sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "src", "tools"))
 )
 
-from src.solvers.recursive_quantum_solver import RecursiveQAOASolver
-from src.struct.graph import random_graph
-from src.tools.visualization import plot_counts
+from recursive_quantum_solver import RecursiveQAOASolver
+from graph import random_graph
+from visualization import plot_counts
 
-G = random_graph(8, 0.5)
-rQAOA = RecursiveQAOASolver(G)
+G = random_graph(5, 0.5)
+rQAOA = RecursiveQAOASolver(G, depth=2)
 G, counts = rQAOA.generate_solution()
 plot_counts(counts)
 G.draw()
+

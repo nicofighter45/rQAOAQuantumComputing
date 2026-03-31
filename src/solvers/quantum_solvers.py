@@ -14,7 +14,7 @@ class QAOASolver(AbstractSolverInstance):
         self.depth = depth
         self.measurement_shots = measurement_shots
 
-    def generate_solution(self):
+    def generate_solution(self, node_remapper=lambda x: x):
 
         cost_operator = -self.hamiltonian.bicolor_cost_hamiltonian()
         qaoa = QAOAAnsatz(cost_operator=cost_operator, reps=self.depth)
@@ -30,8 +30,6 @@ class QAOASolver(AbstractSolverInstance):
             exp = 0
             for bitstring, count in counts.items():
                 x = [int(bit) for bit in bitstring[::-1]]
-                for u, color in enumerate(x):
-                    self.graph.set_color(u, color)
                 exp += self.hamiltonian.cost() * count
             exp /= self.measurement_shots
             return exp
@@ -49,8 +47,8 @@ class QAOASolver(AbstractSolverInstance):
         max_bitstring = max(counts, key=counts.get)
         x_best = [int(bit) for bit in max_bitstring[::-1]]
         for u, color in enumerate(x_best):
-            self.graph.set_color(u, color)
-        return self.graph, counts
+            self.graph.set_color(node_remapper(u), color)
+        return self.graph, counts, x_best
 
 
 """

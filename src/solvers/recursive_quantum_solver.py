@@ -1,14 +1,11 @@
 from quantum_solvers import QAOASolver
-from graph import MergedGraph, Graph
+from graph import Graph
 import numpy as np
 from copy import deepcopy
 
 class RecursiveQAOASolver(QAOASolver):
     def __init__(self, graph: Graph, number_of_color=2, depth=1, measurement_shots=1024, number_of_recursive_steps=lambda n: int(n/2)):
         self.__number_of_recursive_steps = number_of_recursive_steps
-        self.__original_graph = deepcopy(graph)
-        graph.__class__ = MergedGraph
-        graph.__init__()
         super().__init__(graph, number_of_color, depth, measurement_shots)
         
 
@@ -16,31 +13,48 @@ class RecursiveQAOASolver(QAOASolver):
 
         initial_n = len(self.graph)
 
-        for i in range(self.__number_of_recursive_steps(len(self.__original_graph))):
-            n = initial_n - i
-            print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.__original_graph))}, colors {self.graph.colors}, vertices {self.graph.vertices()}, removed vertices {self.graph.get_removed_vertices()}")
-            #self.graph.draw()
-            qaoa_solver = QAOASolver(self.graph, self.number_of_color, self.depth, self.measurement_shots)
-            _, counts = qaoa_solver.generate_solution()
+        mapper = [u for u in self.graph.nodes]
+        color_bind = []
 
+        graph = Graph()
+        graph.add_nodes_from(deepcopy(self.graph.nodes(data=True)))
+        graph.add_edges_from(deepcopy(self.graph.edges(data=True)))
+
+        for i in range(self.__number_of_recursive_steps(len(self.graph))):
             
+            n = initial_n - i
+            print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}")
+            graph.draw()
+            qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
+            _, counts, x_best = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
 
             acc = np.zeros((n, n))
-            for (i, j) in self.graph.edges:
+            for (u, v) in graph.edges:
+                i, j = mapper[u], mapper[v]
                 for bitstring in counts.keys():
                     proba = counts[bitstring] / self.measurement_shots
-                    acc[self.graph.vertices().index(i), self.graph.vertices().index(j)] += proba * (int(bitstring[n-1-i])*2-1) * (int(bitstring[n-1-j])*2-1)
+                    acc[i, j] += proba * (int(bitstring[n-1-i])*2-1) * (int(bitstring[n-1-j])*2-1)
             i, j = np.unravel_index(np.argmax(acc), acc.shape)
+            i, j = mapper.index(i), mapper.index(j)
             
-            self.graph.merge_vertices(i, j)
+            
+            for neighbor in graph.neighbors(i):
+                if neighbor != j:
+                    graph.add_weight(j, neighbor, graph[i][neighbor]['weight'])
+            graph.remove_node(i)
+            mapper[i] = -1
+            color_bind.append((i, j))
+            for k in range(i+1, initial_n):
+                mapper[k] -= 1
         
-        qaoa_solver = QAOASolver(self.graph, self.number_of_color, self.depth, self.measurement_shots)
-        _, counts = qaoa_solver.generate_solution()
+        print(f"Last step, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}")
+        graph.draw()
+        qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
+        _, counts, x_best = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
 
-        return self.__paint_original_graph(), counts
+        for u, d in graph.nodes(data=True):
+            self.graph.set_color(u, d['color'])
+        for u, v in color_bind[::-1]:
+            self.graph.set_color(u, self.graph.get_color(v))
 
-    def __paint_original_graph(self) -> Graph:
-        self.__original_graph.colors = self.graph.colors.copy()
-        for i, j in self.graph.get_merged_nodes()[::-1]:
-            self.__original_graph.set_color(j, self.__original_graph.colors[i])
-        return self.__original_graph
+        return self.graph, counts
