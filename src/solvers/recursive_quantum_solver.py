@@ -1,4 +1,4 @@
-from quantum_solvers import QAOASolver
+from quantum_solver import QAOASolver
 from graph import Graph
 import numpy as np
 from copy import deepcopy
@@ -26,17 +26,21 @@ class RecursiveQAOASolver(QAOASolver):
             print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}")
             graph.draw()
             qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
-            _, counts, x_best = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
+            _, counts = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
 
-            acc = np.zeros((n, n))
+            acc = np.zeros((n, n), dtype=np.float64)
             for (u, v) in graph.edges:
                 i, j = mapper[u], mapper[v]
                 for bitstring in counts.keys():
                     proba = counts[bitstring] / self.measurement_shots
                     acc[i, j] += proba * (int(bitstring[n-1-i])*2-1) * (int(bitstring[n-1-j])*2-1)
-            i, j = np.unravel_index(np.argmax(acc), acc.shape)
-            i, j = mapper.index(i), mapper.index(j)
-            
+            max_value, max_x, max_y = 0, 0, 0
+            for x in range(n):
+                for y in range(n):
+                    if acc[x, y] > max_value:
+                        max_value = acc[x, y]
+                        max_x, max_y = x, y
+            i, j = mapper.index(max_x), mapper.index(max_y)
             
             for neighbor in graph.neighbors(i):
                 if neighbor != j:
@@ -47,14 +51,15 @@ class RecursiveQAOASolver(QAOASolver):
             for k in range(i+1, initial_n):
                 mapper[k] -= 1
         
-        print(f"Last step, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}")
+        print(f"Last step, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}, color_bind {color_bind}")
         graph.draw()
         qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
-        _, counts, x_best = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
+        _, counts = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
 
         for u, d in graph.nodes(data=True):
             self.graph.set_color(u, d['color'])
         for u, v in color_bind[::-1]:
             self.graph.set_color(u, self.graph.get_color(v))
+        
 
         return self.graph, counts

@@ -13,12 +13,19 @@ sys.path.append(
 )
 
 from recursive_quantum_solver import RecursiveQAOASolver
+from quantum_solver import QAOASolver
 from graph import random_graph
 from visualization import plot_counts
 
+
+colors = 2
 G = random_graph(5, 0.5)
-rQAOA = RecursiveQAOASolver(G, depth=2)
-G, counts = rQAOA.generate_solution()
+QAOA = RecursiveQAOASolver(G, depth=1)
+G, counts = QAOA.generate_solution()
+
 plot_counts(counts)
+
+print(counts)
+
 G.draw()
 
