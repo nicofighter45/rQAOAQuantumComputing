@@ -77,6 +77,9 @@ class Graph(nx.Graph):
             
         nx.draw_networkx_edges(self, pos, width=self._get_weights())
         nx.draw_networkx_labels(self, pos)
+        
+        edge_labels = {(u, v): d['weight'] for u, v, d in self.edges(data=True)}
+        nx.draw_networkx_edge_labels(self, pos, edge_labels)
             
         plt.title(f"Graph |V|={len(self)}, |E|={len(self.edges)}")
         plt.axis("off")
