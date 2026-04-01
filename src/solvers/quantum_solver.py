@@ -7,25 +7,22 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-def clean_counts(counts: dict[str, int], colors: int=2) -> dict[str, int]:
-    to_pop = []
+def clean_counts(counts: dict[str, int], colors: int = 2) -> dict[str, int]:
+    if colors <= 1:
+        return dict(counts)
 
-    for key, _ in counts.items():
-        if key in to_pop:
-            continue
-        other_keys = ["" for _ in range(colors-1)]
-        for k in range(1, colors):
-            for b in key:
-                binary = int(b)
-                binary = (binary + k) % colors
-                other_keys[k-1] += str(binary)
-        counts[key] += sum(counts[other_key] for other_key in other_keys)
-        to_pop.extend(other_keys)
+    def shift_key(key: str, shift: int) -> str:
+        return "".join(str((int(ch) + shift) % colors) for ch in key)
 
-    for key in to_pop:
-        counts.pop(key)
-    
-    return counts
+    merged: dict[str, int] = {}
+    for key, count in counts.items():
+        # Canonicalize by taking the lexicographically smallest key in the
+        # orbit obtained by adding a global color shift modulo `colors`.
+        orbit = [shift_key(key, shift) for shift in range(colors)]
+        representative = min(orbit)
+        merged[representative] = merged.get(representative, 0) + count
+
+    return merged
 
 
 class QAOASolver(AbstractSolverInstance):

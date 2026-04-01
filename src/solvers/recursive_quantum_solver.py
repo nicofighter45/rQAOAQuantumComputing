@@ -18,48 +18,56 @@ class RecursiveQAOASolver(QAOASolver):
         graph.add_edges_from(deepcopy(self.graph.edges(data=True)))
         binded_nodes = []
 
-        for i in range(self.__number_of_recursive_steps(len(self.graph))):
-            
-            n = initial_n - i
-            print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges(data=True)}, binded_nodes {binded_nodes}")
+        for step in range(self.__number_of_recursive_steps(len(self.graph))):
+
+            n = initial_n - step
+            print(f"Recursive step {step+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges(data=True)}, binded_nodes {binded_nodes}")
             graph.draw()
             qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
             _, counts = qaoa_solver.generate_solution()
 
-            sign_acc = np.zeros((n, n), dtype=np.float64)
-            acc = np.zeros((n, n), dtype=np.float64)
-            for (i, j) in graph.edges:
-                for bitstring in counts.keys():
-                    proba = counts[bitstring]
-                    acc[i, j] += proba * (int(bitstring[i])*2-1) * (int(bitstring[j])*2-1)
-            for x in range(n):
-                for y in range(n):
-                    acc[x, y] = abs(acc[x, y])
-                    sign_acc[x, y] = np.sign(acc[x, y])
-            i, j = np.unravel_index(acc.argmax(), acc.shape)
-            s = np.sign(acc[i, j])
-            print(f"Collapsing nodes {i} and {j} with sign {s}, acc {acc[i, j]}\n\n{acc}")
-            
-            for neighbor in graph.neighbors(i):
-                if neighbor != j:
-                    if graph.has_edge(j, neighbor):
-                        graph.add_weight(j, neighbor, graph.get_weight(i, neighbor))
-                    else:
-                        graph.set_weight(j, neighbor, (graph.get_weight(i, neighbor)+graph.get_weight(i, j))/2)
-                    graph.set_weight(j, neighbor, s*graph.get_weight(j, neighbor))
-            
+            if len(graph.edges) == 0:
+                break
 
-            self.graph.set_binded_color(self.graph.get_super_node(i), self.graph.get_super_node(j), s)
-            binded_nodes.append(self.graph.get_super_node(i))
+            corr = np.zeros((n, n), dtype=np.float64)
+            for (u, v) in graph.edges:
+                value = 0.0
+                for bitstring, sample_count in counts.items():
+                    # Qiskit bitstrings are little-endian; map qubit q -> bitstring[-q-1].
+                    su = int(bitstring[-u - 1]) * 2 - 1
+                    sv = int(bitstring[-v - 1]) * 2 - 1
+                    value += sample_count * su * sv
+                corr[u, v] = value
+                corr[v, u] = value
+
+            # Collapse only along existing edges using maximum absolute correlation.
+            collapse_u, collapse_v = max(
+                graph.edges,
+                key=lambda edge: abs(corr[edge[0], edge[1]]),
+            )
+            raw_corr = corr[collapse_u, collapse_v]
+            s = 1 if raw_corr >= 0 else -1
+            print(f"Collapsing nodes {collapse_u} and {collapse_v} with sign {s}, corr {raw_corr}\n\n{corr}")
+
+            for neighbor in list(graph.neighbors(collapse_u)):
+                if neighbor != collapse_v:
+                    graph.add_weight(collapse_v, neighbor, s*graph.get_weight(collapse_u, neighbor))
+
+            self.graph.set_binded_color(
+                self.graph.get_super_node(collapse_u),
+                self.graph.get_super_node(collapse_v),
+                s,
+            )
+            binded_nodes.append(self.graph.get_super_node(collapse_u))
             super_nodes = [graph.get_super_node(u) for u in graph.nodes]
-            graph.remove_node(i)
+            graph.remove_node(collapse_u)
             relabeling = {u: u for u in graph.nodes}
-            for k in range(i+1, len(graph.nodes)+1):
-                relabeling[k] = k-1
+            for k in range(collapse_u + 1, len(graph.nodes) + 1):
+                relabeling[k] = k - 1
             print("relabeling", relabeling)
             graph.relabel_nodes(relabeling)
-            for k in range(i, len(graph.nodes)):
-                graph.set_super_node(k, super_nodes[k+1])
+            for k in range(collapse_u, len(graph.nodes)):
+                graph.set_super_node(k, super_nodes[k + 1])
     
         
         print(f"Last step, nodes {graph.nodes}, edges {graph.edges(data=True)}, binded_nodes {binded_nodes}")
