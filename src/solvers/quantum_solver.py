@@ -1,22 +1,42 @@
 import qiskit
 from qiskit.circuit.library import QAOAAnsatz
 from qiskit_aer import AerSimulator
-from hamiltonian import Hamiltonian
+import hamiltonian
 from abstract_solver_instance import AbstractSolverInstance
 import numpy as np
 from scipy.optimize import minimize
 
 
+def clean_counts(counts: dict[str, int], colors: int=2) -> dict[str, int]:
+    to_pop = []
+
+    for key, _ in counts.items():
+        if key in to_pop:
+            continue
+        other_keys = ["" for _ in range(colors-1)]
+        for k in range(1, colors):
+            for b in key:
+                binary = int(b)
+                binary = (binary + k) % colors
+                other_keys[k-1] += str(binary)
+        counts[key] += sum(counts[other_key] for other_key in other_keys)
+        to_pop.extend(other_keys)
+
+    for key in to_pop:
+        counts.pop(key)
+    
+    return counts
+
+
 class QAOASolver(AbstractSolverInstance):
     def __init__(self, graph, number_of_color=2, depth=1, measurement_shots=1024):
         super().__init__(graph, number_of_color)
-        self.hamiltonian = Hamiltonian(self.graph, number_of_color)
         self.depth = depth
         self.measurement_shots = measurement_shots
 
-    def generate_solution(self, node_remapper=lambda x: x):
+    def generate_solution(self):
 
-        cost_operator = -self.hamiltonian.bicolor_cost_hamiltonian()
+        cost_operator = hamiltonian.bicolor_cost_hamiltonian(len(self.graph.nodes), self.graph.edges, self.graph.get_weight)
         qaoa = QAOAAnsatz(cost_operator=cost_operator, reps=self.depth)
         sim = AerSimulator()
 
@@ -29,10 +49,9 @@ class QAOASolver(AbstractSolverInstance):
             # Compute expectation value
             exp = 0
             for bitstring, count in counts.items():
-                x = [int(bit) for bit in bitstring[::-1]]
-                exp += self.hamiltonian.cost() * count
-            exp /= self.measurement_shots
-            return exp
+                x = [int(bit) for bit in bitstring]
+                exp += hamiltonian.cost(self.graph.edges, lambda u: x[u], self.graph.get_weight) * count
+            return -exp
         
         # Initial parameters
         params_init = np.random.uniform(0, 2 * np.pi, qaoa.num_parameters)
@@ -45,10 +64,10 @@ class QAOASolver(AbstractSolverInstance):
         transpiled = qiskit.transpile(bound_qaoa, sim)
         counts = sim.run(transpiled, shots=self.measurement_shots).result().get_counts()
         max_bitstring = max(counts, key=counts.get)
-        x_best = [int(bit) for bit in max_bitstring[::-1]]
+        x_best = [int(bit) for bit in max_bitstring]
         for u, color in enumerate(x_best):
-            self.graph.set_color(node_remapper(u), color)
-        return self.graph, counts
+            self.graph.set_color(u, color)
+        return self.graph, clean_counts(counts)
 
 
 """

@@ -13,53 +13,69 @@ class RecursiveQAOASolver(QAOASolver):
 
         initial_n = len(self.graph)
 
-        mapper = [u for u in self.graph.nodes]
-        color_bind = []
-
         graph = Graph()
         graph.add_nodes_from(deepcopy(self.graph.nodes(data=True)))
         graph.add_edges_from(deepcopy(self.graph.edges(data=True)))
+        binded_nodes = []
 
         for i in range(self.__number_of_recursive_steps(len(self.graph))):
             
             n = initial_n - i
-            print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}")
+            print(f"Recursive step {i+1}/{self.__number_of_recursive_steps(len(self.graph))}, nodes {graph.nodes}, edges {graph.edges(data=True)}, binded_nodes {binded_nodes}")
             graph.draw()
             qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
-            _, counts = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
+            _, counts = qaoa_solver.generate_solution()
 
+            sign_acc = np.zeros((n, n), dtype=np.float64)
             acc = np.zeros((n, n), dtype=np.float64)
-            for (u, v) in graph.edges:
-                i, j = mapper[u], mapper[v]
+            for (i, j) in graph.edges:
                 for bitstring in counts.keys():
-                    proba = counts[bitstring] / self.measurement_shots
-                    acc[i, j] += proba * (int(bitstring[n-1-i])*2-1) * (int(bitstring[n-1-j])*2-1)
-            max_value, max_x, max_y = 0, 0, 0
+                    proba = counts[bitstring]
+                    acc[i, j] += proba * (int(bitstring[i])*2-1) * (int(bitstring[j])*2-1)
             for x in range(n):
                 for y in range(n):
-                    if acc[x, y] > max_value:
-                        max_value = acc[x, y]
-                        max_x, max_y = x, y
-            i, j = mapper.index(max_x), mapper.index(max_y)
+                    acc[x, y] = abs(acc[x, y])
+                    sign_acc[x, y] = np.sign(acc[x, y])
+            i, j = np.unravel_index(acc.argmax(), acc.shape)
+            s = np.sign(acc[i, j])
+            print(f"Collapsing nodes {i} and {j} with sign {s}, acc {acc[i, j]}\n\n{acc}")
             
             for neighbor in graph.neighbors(i):
                 if neighbor != j:
-                    graph.add_weight(j, neighbor, graph[i][neighbor]['weight'])
+                    if graph.has_edge(j, neighbor):
+                        graph.add_weight(j, neighbor, graph.get_weight(i, neighbor))
+                    else:
+                        graph.set_weight(j, neighbor, (graph.get_weight(i, neighbor)+graph.get_weight(i, j))/2)
+                    graph.set_weight(j, neighbor, s*graph.get_weight(j, neighbor))
+            
+
+            self.graph.set_binded_color(self.graph.get_super_node(i), self.graph.get_super_node(j), s)
+            binded_nodes.append(self.graph.get_super_node(i))
+            super_nodes = [graph.get_super_node(u) for u in graph.nodes]
             graph.remove_node(i)
-            mapper[i] = -1
-            color_bind.append((i, j))
-            for k in range(i+1, initial_n):
-                mapper[k] -= 1
+            relabeling = {u: u for u in graph.nodes}
+            for k in range(i+1, len(graph.nodes)+1):
+                relabeling[k] = k-1
+            print("relabeling", relabeling)
+            graph.relabel_nodes(relabeling)
+            for k in range(i, len(graph.nodes)):
+                graph.set_super_node(k, super_nodes[k+1])
+    
         
-        print(f"Last step, nodes {graph.nodes}, edges {graph.edges}, mapper {mapper}, color_bind {color_bind}")
+        print(f"Last step, nodes {graph.nodes}, edges {graph.edges(data=True)}, binded_nodes {binded_nodes}")
         graph.draw()
         qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
-        _, counts = qaoa_solver.generate_solution(node_remapper=lambda x: mapper.index(x))
+        _, counts = qaoa_solver.generate_solution()
 
-        for u, d in graph.nodes(data=True):
-            self.graph.set_color(u, d['color'])
-        for u, v in color_bind[::-1]:
-            self.graph.set_color(u, self.graph.get_color(v))
+        for i, c in enumerate(graph.get_colors()):
+            print(f"Color of node {i}, {graph.get_super_node(i)} is {c}")
+            self.graph.set_color(self.graph.get_super_node(i), c)
+        for u in binded_nodes[::-1]:
+            v, s = self.graph.get_binded_color(u)
+            if s == 1:
+                self.graph.set_color(u, self.graph.get_color(v))
+            else:
+                self.graph.set_color(u, 1-self.graph.get_color(v))
         
 
         return self.graph, counts

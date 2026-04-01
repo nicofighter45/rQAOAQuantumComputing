@@ -11,23 +11,6 @@ def store_test_results(graph_name: str, results: dict) -> None:
 # Plot the counts as a bar chart
 def plot_counts(counts, colors=2) -> None:
 
-    to_pop = []
-
-    for key, _ in counts.items():
-        if key in to_pop:
-            continue
-        other_keys = ["" for _ in range(colors-1)]
-        for k in range(1, colors):
-            for b in key:
-                binary = int(b)
-                binary = (binary + k) % colors
-                other_keys[k-1] += str(binary)
-        counts[key] += sum(counts[other_key] for other_key in other_keys)
-        to_pop.extend(other_keys)
-
-    for key in to_pop:
-        counts.pop(key)
-
     plt.figure(figsize=(8, 4))
     sorted_counts = dict(sorted(counts.items(), key=lambda x: x[1], reverse=True))
     total = sum(sorted_counts.values())
