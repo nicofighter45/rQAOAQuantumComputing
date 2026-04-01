@@ -31,6 +31,8 @@ def clean_counts(counts: dict[str, int], colors: int=2) -> dict[str, int]:
 class QAOASolver(AbstractSolverInstance):
     def __init__(self, graph, number_of_color=2, depth=1, measurement_shots=1024):
         super().__init__(graph, number_of_color)
+        if self.number_of_color != 2:
+            raise ValueError("QAOASolver currently supports only 2-color problems.")
         self.depth = depth
         self.measurement_shots = measurement_shots
 
@@ -49,7 +51,8 @@ class QAOASolver(AbstractSolverInstance):
             # Compute expectation value
             exp = 0
             for bitstring, count in counts.items():
-                x = [int(bit) for bit in bitstring]
+                # Qiskit returns bitstrings in little-endian order for measured qubits.
+                x = [int(bit) for bit in bitstring[::-1]]
                 exp += hamiltonian.cost(self.graph.edges, lambda u: x[u], self.graph.get_weight) * count
             return -exp
         
@@ -64,7 +67,7 @@ class QAOASolver(AbstractSolverInstance):
         transpiled = qiskit.transpile(bound_qaoa, sim)
         counts = sim.run(transpiled, shots=self.measurement_shots).result().get_counts()
         max_bitstring = max(counts, key=counts.get)
-        x_best = [int(bit) for bit in max_bitstring]
+        x_best = [int(bit) for bit in max_bitstring[::-1]]
         for u, color in enumerate(x_best):
             self.graph.set_color(u, color)
         return self.graph, clean_counts(counts)
