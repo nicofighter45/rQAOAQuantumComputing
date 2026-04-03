@@ -19,10 +19,12 @@ from visualization import plot_counts
 
 colors = 2
 G = Graph()
-G.add_nodes_from([0, 1, 2])
+G.add_nodes_from([0, 1, 2, 3, 4])
 G.add_edge(0, 1)
 G.add_edge(1, 2)
-QAOA = QAOASolver(G, depth=1)
+G.add_edge(2, 3)
+G.add_edge(3, 4)
+QAOA = QAOASolver(G, depth=1, number_of_color=4)
 G, counts = QAOA.generate_solution()
 
 plot_counts(counts)

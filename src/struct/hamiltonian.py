@@ -111,6 +111,11 @@ def cost_hamiltonian(
     dim = 2**num_qubits
     diagonal = np.zeros(dim, dtype=np.float64)
 
+    # States that decode to colors outside [0, k-1] are invalid for the chosen
+    # encoding. Push them below any feasible score so QAOA avoids them.
+    #max_abs_cost = sum(abs(float(weight(u, v))) for (u, v) in edges)
+    #invalid_state_penalty = -(max_abs_cost + 1.0) # not working
+
     # Build the true diagonal in the full 2^(n*m) Hilbert space.
     for state_idx in range(dim):
         bits = format(state_idx, f"0{num_qubits}b")
@@ -125,6 +130,7 @@ def cost_hamiltonian(
             colors.append(color)
 
         if not valid_encoding:
+            #diagonal[state_idx] = invalid_state_penalty # not working
             continue
 
         value = 0.0
@@ -133,4 +139,5 @@ def cost_hamiltonian(
                 value += float(weight(u, v))
         diagonal[state_idx] = value
 
-    return SparsePauliOp.from_operator(Operator(np.diag(diagonal))).simplify()
+    pauli_terms = [("I" * num_qubits, diagonal[i]) for i in range(dim) if diagonal[i] != 0.0]
+    return SparsePauliOp.from_list(pauli_terms).simplify()

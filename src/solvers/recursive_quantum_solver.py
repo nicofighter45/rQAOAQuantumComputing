@@ -29,34 +29,33 @@ class RecursiveQAOASolver(QAOASolver):
             if len(graph.edges) == 0:
                 break
 
-            corr = np.zeros((n, n), dtype=np.float64)
+            corr = np.zeros((n, n, self.number_of_color), dtype=np.float64)
             for (u, v) in graph.edges:
-                value = 0.0
                 for bitstring, sample_count in counts.items():
                     # Qiskit bitstrings are little-endian; map qubit q -> bitstring[-q-1].
-                    su = int(bitstring[-u - 1]) * 2 - 1
-                    sv = int(bitstring[-v - 1]) * 2 - 1
-                    value += sample_count * su * sv
-                corr[u, v] = value
-                corr[v, u] = value
+                    color_diff = abs(int(bitstring[-u - 1])-int(bitstring[-v - 1]))
+                    corr[u, v, color_diff] += sample_count
+                    for k in range(self.number_of_color):
+                        if k != color_diff:
+                            corr[u, v, k] -= sample_count
 
             # Collapse only along existing edges using maximum absolute correlation.
-            collapse_u, collapse_v = max(
-                graph.edges,
-                key=lambda edge: abs(corr[edge[0], edge[1]]),
+            collapse_u, collapse_v, collapse_color = max(
+                ((u, v, c) for u, v in graph.edges for c in range(self.number_of_color)),
+                key=lambda edge: corr[edge[0], edge[1], edge[2]],
             )
-            raw_corr = corr[collapse_u, collapse_v]
-            s = 1 if raw_corr >= 0 else -1
-            print(f"Collapsing nodes {collapse_u} and {collapse_v} with sign {s}, corr {raw_corr}\n\n{corr}")
-
+            
             for neighbor in list(graph.neighbors(collapse_u)):
                 if neighbor != collapse_v:
-                    graph.add_weight(collapse_v, neighbor, s*graph.get_weight(collapse_u, neighbor))
+                    if self.number_of_color == 2:
+                        graph.add_weight(collapse_v, neighbor, (1-2*collapse_color)*graph.get_weight(collapse_u, neighbor))
+                    else:
+                        graph.add_weight(collapse_v, neighbor, graph.get_weight(collapse_u, neighbor))
 
             self.graph.set_binded_color(
                 self.graph.get_super_node(collapse_u),
                 self.graph.get_super_node(collapse_v),
-                s,
+                collapse_color,
             )
             binded_nodes.append(self.graph.get_super_node(collapse_u))
             super_nodes = [graph.get_super_node(u) for u in graph.nodes]
@@ -75,15 +74,13 @@ class RecursiveQAOASolver(QAOASolver):
         qaoa_solver = QAOASolver(graph, self.number_of_color, self.depth, self.measurement_shots)
         _, counts = qaoa_solver.generate_solution()
 
+        print(f"Binded nodes: {[(u, *self.graph.get_binded_color(u)) for u in binded_nodes]}")
+
         for i, c in enumerate(graph.get_colors()):
             print(f"Color of node {i}, {graph.get_super_node(i)} is {c}")
             self.graph.set_color(self.graph.get_super_node(i), c)
         for u in binded_nodes[::-1]:
-            v, s = self.graph.get_binded_color(u)
-            if s == 1:
-                self.graph.set_color(u, self.graph.get_color(v))
-            else:
-                self.graph.set_color(u, 1-self.graph.get_color(v))
+            v, color_diff = self.graph.get_binded_color(u)
+            self.graph.set_color(u, (self.graph.get_color(v)+color_diff)%self.number_of_color)
         
-
         return self.graph, counts
