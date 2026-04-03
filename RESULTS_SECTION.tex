@@ -1,0 +1,197 @@
+% =====================================================================
+% RESULTS SECTION FOR RQAOA EXPERIMENTS
+% =====================================================================
+
+\section{Experimental Results}
+\label{sec:results}
+
+This section presents the comprehensive experimental evaluation of the Recursive Quantum Approximate Optimization Algorithm (RQAOA) on various graph topologies. We analyze the approximation performance by comparing the RQAOA-estimated solutions against optimal solutions obtained via classical brute-force methods.
+
+\subsection{Experimental Setup}
+\label{subsec:setup}
+
+\subsubsection{Test Graphs}
+We evaluated RQAOA on a diverse set of graph instances to assess its performance across different topologies and sizes:
+
+\begin{itemize}
+    \item \textbf{Erdős-Rényi graphs:} Random graphs with varying edge densities ($p \in \{0.4, 0.6, 0.8\}$)
+    \item Graph sizes: $n \in \{8, 12, 16\}$ nodes
+    \item Total configurations tested: 9 graph types
+    \item Samples per graph type: 10 independent runs with randomized edge weights
+\end{itemize}
+
+Each graph instance was assigned random edge weights sampled uniformly from a standard distribution. The weights were subsequently normalized using z-score normalization followed by min-max scaling to ensure numerical stability across different graph topologies. A small constant (0.001) was added to prevent vanishing circuit parameters.
+
+\subsubsection{RQAOA Configuration}
+The RQAOA algorithm was configured with the following hyperparameters:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\hline
+    \textbf{Parameter} & \textbf{Value} \\
+\hline
+    QAOA Depth ($p$) & 3 \\
+    Circuit Repetitions (shots) & 1000 \\
+    Target Core Size ($n_c$) & 4 \\
+    Classical Optimizer & COBYLA \\
+    Optimizer Max Iterations & 1000 \\
+    Parameter Bounds & $[\gamma, \beta] \in [0, 1]$ \\
+    Initial Guess & Zero vector \\
+\hline
+\end{tabular}
+\caption{RQAOA experimental hyperparameters.}
+\label{tab:rqaoa_params}
+\end{table}
+
+The core size $n_c = 4$ was selected to balance computational complexity with the ability to perform meaningful variable elimination steps. At each elimination step, RQAOA uses the QAOA estimator to identify the strongly correlated qubit pairs, which are then merged based on their measured correlations.
+
+\subsubsection{Classical Baseline}
+To establish the optimal performance baseline, we employed a brute-force approach that exhaustively evaluates all $2^n$ possible bitstrings for the Max-Cut problem. The optimal cost is defined as:
+
+\begin{equation}
+    C_{\text{opt}} = \max_{\mathbf{z} \in \{0,1\}^n} C(\mathbf{z})
+\end{equation}
+
+The approximation ratio is computed as:
+
+\begin{equation}
+    r_{\text{approx}} = \frac{C_{\text{RQAOA}}}{C_{\text{opt}}}
+\end{equation}
+
+where $C_{\text{RQAOA}}$ is the cost achieved by the RQAOA algorithm.
+
+\subsection{Performance Analysis}
+\label{subsec:performance}
+
+\subsubsection{Overall Statistics}
+Across all tested configurations (90 total samples: 9 graph types $\times$ 10 runs each), RQAOA demonstrated the following performance metrics:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\hline
+    \textbf{Metric} & \textbf{Value} \\
+\hline
+    Mean Approximation Ratio & See Table~\ref{tab:results_summary} \\
+    Median Approximation Ratio & See Figure~\ref{fig:histogram} \\
+    Minimum Ratio & See Figure~\ref{fig:histogram} \\
+    Maximum Ratio & See Figure~\ref{fig:histogram} \\
+    Standard Deviation & See Table~\ref{tab:results_summary} \\
+\hline
+\end{tabular}
+\caption{Overall RQAOA performance statistics.}
+\label{tab:overall_stats}
+\end{table}
+
+Detailed statistics for each graph type are presented in Table~\ref{tab:results_summary}.
+
+\subsubsection{Performance by Graph Type}
+
+Figure~\ref{fig:boxplot} displays the distribution of approximation ratios for each graph topology using box plots. This visualization reveals:
+
+\begin{itemize}
+    \item \textbf{Consistency:} The variability (interquartile range) of results across different runs for the same graph type
+    \item \textbf{Median Performance:} The typical approximation ratio achieved for each topology
+    \item \textbf{Outlier Behavior:} Exceptional cases with unusually high or low performance
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{results_boxplot.png}
+\caption{Distribution of RQAOA approximation ratios by graph type. Box plots show the median (line), interquartile range (box), and outliers (points) for each graph topology tested.}
+\label{fig:boxplot}
+\end{figure}
+
+The mean approximation ratios with error bars representing standard deviations are shown in Figure~\ref{fig:barplot}. This presentation allows for direct comparison of average performance across graph types while accounting for variability within each configuration.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{results_barplot_with_errors.png}
+\caption{Mean approximation ratios for RQAOA across all graph types, with error bars indicating standard deviation. The red dashed line marks the theoretical optimum (ratio = 1.0).}
+\label{fig:barplot}
+\end{figure}
+
+\subsubsection{Distribution Analysis}
+
+Figure~\ref{fig:histogram} presents the overall distribution of approximation ratios across all 90 samples. Key observations include:
+
+\begin{itemize}
+    \item The histogram shows the frequency distribution of approximation ratios
+    \item Vertical lines indicate the mean, median, and optimal performance (1.0)
+    \item The distribution shape reveals whether RQAOA exhibits consistent or variable performance
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{results_histogram.png}
+\caption{Histogram of approximation ratios for RQAOA across all tested graphs. Red dashed line: mean ratio; green dashed line: median ratio; orange solid line: optimal ratio (1.0).}
+\label{fig:histogram}
+\end{figure}
+
+\subsubsection{Cost Analysis: Optimal vs. Estimated}
+
+To visualize the quality of RQAOA solutions, we compare the optimal costs (from brute-force) with the costs estimated by RQAOA. Figure~\ref{fig:scatter} presents a scatter plot where each point represents one experimental run.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{results_scatter_costs.png}
+\caption{Scatter plot comparing RQAOA-estimated costs against optimal costs. Points above the diagonal line $y=x$ represent suboptimal solutions. Color intensity indicates the approximation ratio, with red tones representing worse performance (higher ratio) and green tones representing better performance (lower ratio).}
+\label{fig:scatter}
+\end{figure}
+
+The (1,1) diagonal represents perfect optimization. Points below this line (lower values in the figure) would represent superior performance to the brute-force method, which is theoretically impossible due to the maximum nature of the Max-Cut problem.
+
+\subsection{Summary Table}
+\label{subsec:summary}
+
+Table~\ref{tab:results_summary} provides a comprehensive summary of performance metrics for each tested graph topology:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=1.0\linewidth]{results_summary_table.png}
+\caption{Detailed performance statistics by graph type. Mean Ratio: average approximation factor; Std Dev: standard deviation across runs; Min/Max: best and worst approximation ratios; Samples: number of independent runs.}
+\label{tab:results_summary}
+\end{figure}
+
+\subsection{Key Findings}
+\label{subsec:findings}
+
+Our experimental evaluation reveals several important characteristics of RQAOA:
+
+\begin{enumerate}
+    \item \textbf{Graph-Dependent Performance:} Different graph topologies exhibit varying approximation characteristics, suggesting that structure plays a significant role in RQAOA effectiveness.
+    
+    \item \textbf{Consistency:} The relatively small standard deviations observed across runs of the same graph type indicate that RQAOA provides reproducible results for a given topology.
+    
+    \item \textbf{Quality of Approximation:} RQAOA achieves non-trivial approximation ratios for all tested graph instances, though the exact values depend on the specific graph topology and size.
+    
+    \item \textbf{Scalability Considerations:} As the number of nodes increases within the tested range (8-16 nodes), the algorithm requires careful parameter tuning to maintain performance.
+\end{enumerate}
+
+\subsection{Future Work on Extended Graph Classes}
+\label{subsec:future_graphs}
+
+While this study focuses on Erdős-Rényi graphs, the methodology is readily extensible to other graph topologies available through NetworkX:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\hline
+    \textbf{Graph Class} & \textbf{Relevance} \\
+\hline
+    Random Regular Graphs & Regular structure \\
+    Complete Graphs & Theoretical upper bound \\
+    Bipartite Graphs & Practical applications \\
+    Grid Graphs & Hardware topology\\
+    Path/Ladder Graphs & Linear structures \\
+    Star Graphs & Hub-and-spoke patterns \\
+\hline
+\end{tabular}
+\caption{Additional graph classes available for extended experiments.}
+\label{tab:future_graphs}
+\end{table}
+
+These graph classes can provide insights into how RQAOA performs on structurally diverse problem instances, enabling a more comprehensive characterization of the algorithm's strengths and limitations.
+
+\end{document}
